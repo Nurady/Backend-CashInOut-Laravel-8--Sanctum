@@ -11,29 +11,54 @@ class CashController extends Controller
 {
     public function index()
     {
-        $debit = Auth::user()->cashes()
-                        ->whereBetween('when', [ now()->firstOfMonth(), now() ])
+        $from = request('from');
+        $to = request('to');
+        
+        if ($from && $to) {
+            $debit = Auth::user()->cashes()
+                        ->whereBetween('when', [ $from, $to ])
                         ->where('amount', '>=', 0)
                         ->get('amount')
                         ->sum('amount');
 
-        $credit = Auth::user()->cashes()
-                        ->whereBetween('when', [ now()->firstOfMonth(), now() ])
+            $credit = Auth::user()->cashes()
+                        ->whereBetween('when', [ $from, $to ])
                         ->where('amount', '<', 0)
                         ->get('amount')
                         ->sum('amount');
 
-        // $balances = $debit + $credit;
-        $balances = Auth::user()->cashes()->get('amount')->sum('amount');
-        $transactions = Auth::user()->cashes()
+            // $balances = $debit + $credit;
+            $balances = Auth::user()->cashes()->get('amount')->sum('amount');
+            $transactions = Auth::user()->cashes()
+                                ->whereBetween('when', [ $from, $to ])
+                                ->latest()->get();
+        } else {
+            $debit = Auth::user()->cashes()
                             ->whereBetween('when', [ now()->firstOfMonth(), now() ])
-                            ->latest()->get();
+                            ->where('amount', '>=', 0)
+                            ->get('amount')
+                            ->sum('amount');
+    
+            $credit = Auth::user()->cashes()
+                            ->whereBetween('when', [ now()->firstOfMonth(), now() ])
+                            ->where('amount', '<', 0)
+                            ->get('amount')
+                            ->sum('amount');
+    
+            // $balances = $debit + $credit;
+            $balances = Auth::user()->cashes()->get('amount')->sum('amount');
+            $transactions = Auth::user()->cashes()
+                                ->whereBetween('when', [ now()->firstOfMonth(), now() ])
+                                ->latest()->get();
+        }        
 
         return response()->json([
             'debit' => formatPrice($debit),
             'credit' => formatPrice($credit),
             'balances' => formatPrice($balances),
-            'transactions' => CashResource::collection($transactions)
+            'transactions' => CashResource::collection($transactions),
+            'now' => now()->format("Y-m-d"),
+            'firstOfMonth' => now()->firstOfMonth()->format("Y-m-d"),
         ]);
     }
     
