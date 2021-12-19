@@ -88,6 +88,11 @@ class CashController extends Controller
 
     public function show(Cash $cash)
     {
+        // if (Auth::id() !== $cash->user_id) {
+        //     abort(403);
+        // }
+
+        $this->authorize('show', $cash);
         return new CashResource($cash);
     }
 }
