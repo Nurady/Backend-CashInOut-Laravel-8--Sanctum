@@ -21,6 +21,7 @@ class CashResource extends JsonResource
             'description' => $this->description,
             'when' => $this->when->format("d F Y H:i"),
             'amount' => formatPrice(abs($this->amount)),
+            'isCredit' => ($this->amount < 0) ? true : false
         ];
     }
 }
